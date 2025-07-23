@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
         
         string echo_str=request.substr(x+1,y-(x+1));
         http_response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ";
-        http_response+=echo_str.length();
+        http_response+=to_string(echo_str.length());
         http_response+="\r\n\r\n";
         http_response+=echo_str;
         
