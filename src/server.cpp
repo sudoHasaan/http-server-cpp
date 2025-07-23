@@ -56,17 +56,40 @@ int main(int argc, char **argv) {
   std::cout << "Waiting for a client to connect...\n";
   
   int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
-  if (client_fd < 0){
+  if (client_fd > 0){
+    std::cout << "Client connected\n";
+    char buffer[1024];
+    int bytes_recieved=read(client_fd, buffer, sizeof(buffer)-1);
+    if(bytes_recieved<0){
+      cerr<<"Failed to read from server\n";
+      return 0;
+    }
+    else{
+      string request_string(buffer);
+      size_t x=request_string.find(" "); // start pos of response
+      size_t y=request_string.find(" ",x+1); // end pos of response
+      string request=request_string.substr(x+1,y-(x+1)); // getting the request to give the appropriate response.
+      string http_response;
+      if( request=="/abcdefg"){
+        http_response = "HTTP/1.1 404 Not Found\r\n\r\n";
+        write(client_fd, http_response.c_str(), http_response.length());
+      }
+      else if(request=="/"){
+        http_response="HTTP/1.1 200 OK\r\n\r\n";
+        write(client_fd, http_response.c_str(), http_response.length());
+      }
+
+    }
+
+    close(client_fd);
+  
+  }
+  else{
     cerr << "Accespt Failed\n";
 
     return 0; 
   }
   
-  std::cout << "Client connected\n";
-  string http_response = "HTTP/1.1 200 OK\r\n\r\n";
-  write(client_fd, http_response.c_str(), http_response.length());
-
-  close(client_fd);
   close(server_fd);
 
   return 0;
