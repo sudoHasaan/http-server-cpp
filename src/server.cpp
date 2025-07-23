@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
         y=request_string.find("\r",x+1);
         string value=request_string.substr(x+1,y-x);
         http_response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ";
-        http_response+=to_string(value.length());
+        http_response+=to_string(value.length()-1);
         http_response+="\r\n\r\n";
         http_response+=value;
       }
