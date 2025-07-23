@@ -70,12 +70,12 @@ int main(int argc, char **argv) {
       size_t y=request_string.find(" ",x+1); // end pos of response
       string request=request_string.substr(x+1,y-(x+1)); // getting the request to give the appropriate response.
       string http_response;
-      if( request=="/abcdefg"){
-        http_response = "HTTP/1.1 404 Not Found\r\n\r\n";
+      if( request=="/"){
+        http_response="HTTP/1.1 200 OK\r\n\r\n";
         write(client_fd, http_response.c_str(), http_response.length());
       }
-      else if(request=="/"){
-        http_response="HTTP/1.1 200 OK\r\n\r\n";
+      else{
+        http_response = "HTTP/1.1 404 Not Found\r\n\r\n";
         write(client_fd, http_response.c_str(), http_response.length());
       }
 
