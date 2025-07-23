@@ -8,11 +8,13 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <thread>
+#include <fstream>
+#include <filesystem>
 
 using namespace std;
 
 // Function to handle a client
-void handle_client(int client_fd){
+void handle_client(int client_fd,string directory_path){
   if (client_fd > 0){
     std::cout << "Client connected\n";
     char buffer[1024];
@@ -56,7 +58,22 @@ void handle_client(int client_fd){
         http_response+=value;
       }
       else if(request.substr(0,7)=="/files/"){
-        cout<<"Hello world\n";
+        string filename=request.substr(7);
+        string path=directory_path+filename;
+        ifstream file(path, std::ios::binary);
+        if(file.is_open()){
+          stringstream buff;
+          buff << file.rdbuf();
+          string file_contents = buff.str();
+          http_response="HTTP/1.1 200 OK\r\n";
+          http_response+="Content-Type: application/octet-stream\r\n";
+          http_response+="Content-Length: "+to_string(file_contents.length())+"\r\n\r\n";
+          http_response+=file_contents;
+
+        }
+        else{
+          http_response="HTTP/1.1 404 Not Found\r\n\r\n";
+        }
       }
       else{
         http_response = "HTTP/1.1 404 Not Found\r\n\r\n";
@@ -77,6 +94,13 @@ void handle_client(int client_fd){
 }
 
 int main(int argc, char **argv) {
+  // Extracting the directory path
+  string directory_path="."; // It refers to current directory
+  if(argc>1 && string(argv[1]) == "--directory"){
+    if(argc>2){
+      directory_path=argv[2];
+    }
+  } 
   // Flush after every std::cout / std::cerr
   std::cout << std::unitbuf;
   std::cerr << std::unitbuf;
@@ -124,7 +148,7 @@ int main(int argc, char **argv) {
     
     int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
     // Make a thread to handle concurrent clients
-    thread worker_thread(handle_client,client_fd);
+    thread worker_thread(handle_client,client_fd,directory_path);
     worker_thread.detach();
   }
   close(server_fd);
