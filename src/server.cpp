@@ -55,67 +55,67 @@ int main(int argc, char **argv) {
   int client_addr_len = sizeof(client_addr);
   
   std::cout << "Waiting for a client to connect...\n";
-  
-  int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
-  if (client_fd > 0){
-    std::cout << "Client connected\n";
-    char buffer[1024];
-    int bytes_recieved=read(client_fd, buffer, sizeof(buffer)-1);
-    if(bytes_recieved<0){
-      cerr<<"Failed to read from server\n";
-      return 0;
-    }
-    else{
-      string request_string(buffer);
-      size_t x=request_string.find(" "); // start pos of response
-      size_t y=request_string.find(" ",x+1); // end pos of response
-      string http_response; // the response i will send
-      string request=request_string.substr(x+1,y-(x+1)); // getting the request to give the appropriate response.
-      
-      if(request=="/"){
-        http_response = "HTTP/1.1 200 OK\r\n\r\n";
-      }
-      else if(request.substr(0, 6)=="/echo/"){
-      
-        // if request contains the word "echo", then print the word after in in your response
-        
-        x=request.find("/",1);
-        y=y=request_string.find(" ",x+1);
-        
-        string echo_str=request.substr(x+1,y-(x+1));
-        http_response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ";
-        http_response+=to_string(echo_str.length());
-        http_response+="\r\n\r\n";
-        http_response+=echo_str;
-        
-      }
-      else if(request=="/user-agent"){
-        x=request_string.find("User-Agent:");
-        x=request_string.find(" ",x+1);
-        y=request_string.find("\r",x+1);
-        string value=request_string.substr(x+1,y-(x+1));
-        http_response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ";
-        http_response+=to_string(value.length());
-        http_response+="\r\n\r\n";
-        http_response+=value;
+  while(true){
+    int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
+    if (client_fd > 0){
+      std::cout << "Client connected\n";
+      char buffer[1024];
+      int bytes_recieved=read(client_fd, buffer, sizeof(buffer)-1);
+      if(bytes_recieved<0){
+        cerr<<"Failed to read from server\n";
+        return 0;
       }
       else{
-        http_response = "HTTP/1.1 404 Not Found\r\n\r\n";
-       
+        string request_string(buffer);
+        size_t x=request_string.find(" "); // start pos of response
+        size_t y=request_string.find(" ",x+1); // end pos of response
+        string http_response; // the response i will send
+        string request=request_string.substr(x+1,y-(x+1)); // getting the request to give the appropriate response.
+        
+        if(request=="/"){
+          http_response = "HTTP/1.1 200 OK\r\n\r\n";
+        }
+        else if(request.substr(0, 6)=="/echo/"){
+        
+          // if request contains the word "echo", then print the word after in in your response
+          
+          x=request.find("/",1);
+          y=y=request_string.find(" ",x+1);
+          
+          string echo_str=request.substr(x+1,y-(x+1));
+          http_response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ";
+          http_response+=to_string(echo_str.length());
+          http_response+="\r\n\r\n";
+          http_response+=echo_str;
+          
+        }
+        else if(request=="/user-agent"){
+          x=request_string.find("User-Agent:");
+          x=request_string.find(" ",x+1);
+          y=request_string.find("\r",x+1);
+          string value=request_string.substr(x+1,y-(x+1));
+          http_response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ";
+          http_response+=to_string(value.length());
+          http_response+="\r\n\r\n";
+          http_response+=value;
+        }
+        else{
+          http_response = "HTTP/1.1 404 Not Found\r\n\r\n";
+        
+        }
+        write(client_fd, http_response.c_str(), http_response.length());
+
       }
-      write(client_fd, http_response.c_str(), http_response.length());
 
+      close(client_fd);
+      
     }
+    else{
+      cerr << "Accespt Failed\n";
 
-    close(client_fd);
-  
-  }
-  else{
-    cerr << "Accespt Failed\n";
-
-    return 0; 
-  }
-  
+      return 0; 
+    }
+  }  
   close(server_fd);
 
   return 0;
