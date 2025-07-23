@@ -55,6 +55,9 @@ void handle_client(int client_fd){
         http_response+="\r\n\r\n";
         http_response+=value;
       }
+      else if(request.substr(0,7)=="/files/"){
+        cout<<"Hello world\n";
+      }
       else{
         http_response = "HTTP/1.1 404 Not Found\r\n\r\n";
        
