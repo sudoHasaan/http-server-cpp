@@ -88,6 +88,16 @@ int main(int argc, char **argv) {
         http_response+=echo_str;
         
       }
+      else if(request=="/user-agent"){
+        x=request_string.find("User-Agent:");
+        x=request_string.find(" ",x+1);
+        y=request_string.find("\r",x+1);
+        string value=request_string.substr(x+1,y-x);
+        http_response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ";
+        http_response+=to_string(value.length());
+        http_response+="\r\n\r\n";
+        http_response+=value;
+      }
       else{
         http_response = "HTTP/1.1 404 Not Found\r\n\r\n";
        
