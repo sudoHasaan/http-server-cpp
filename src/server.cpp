@@ -68,28 +68,31 @@ int main(int argc, char **argv) {
       string request_string(buffer);
       size_t x=request_string.find(" "); // start pos of response
       size_t y=request_string.find(" ",x+1); // end pos of response
+      string http_response; // the response i will send
       string request=request_string.substr(x+1,y-(x+1)); // getting the request to give the appropriate response.
-      // checking if request contains the word "echo"?
-      x=request.find("/");
-      y=request.find("/",x+1);
-    
-      string check_echo=request.substr(x,y-(x));
       
-      string http_response;
-      if( check_echo=="/echo"){
+      if(request=="/"){
+        http_response = "HTTP/1.1 200 OK\r\n\r\n";
+      }
+      else if(request.substr(0, 6)=="/echo/"){
+      
         // if request contains the word "echo", then print the word after in in your response
         
-        x=request.find("/",x+1);
+        x=request.find("/",1);
         y=y=request_string.find(" ",x+1);
+        
         string echo_str=request.substr(x+1,y-(x+1));
-        http_response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 3\r\n\r\n";
+        http_response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ";
+        http_response+=echo_str.length();
+        http_response+="\r\n\r\n";
         http_response+=echo_str;
-        write(client_fd, http_response.c_str(), http_response.length());
+        
       }
       else{
         http_response = "HTTP/1.1 404 Not Found\r\n\r\n";
-        write(client_fd, http_response.c_str(), http_response.length());
+       
       }
+      write(client_fd, http_response.c_str(), http_response.length());
 
     }
 
