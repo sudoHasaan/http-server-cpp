@@ -8,6 +8,8 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+using namespace std;
+
 int main(int argc, char **argv) {
   // Flush after every std::cout / std::cerr
   std::cout << std::unitbuf;
@@ -53,9 +55,18 @@ int main(int argc, char **argv) {
   
   std::cout << "Waiting for a client to connect...\n";
   
-  accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
-  std::cout << "Client connected\n";
+  int client_fd = accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
+  if (client_fd < 0){
+    cerr << "Accespt Failed\n";
+
+    return 0; 
+  }
   
+  std::cout << "Client connected\n";
+  string http_response = "http/1.1 200 OK\r\n\r\n";
+  write(client_fd, http_response.c_str(), http_response.length());
+
+  close(client_fd);
   close(server_fd);
 
   return 0;
