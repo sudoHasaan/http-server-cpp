@@ -35,7 +35,7 @@ void handle_client(int client_fd,string directory_path){
       }
       else if(request.substr(0, 6)=="/echo/"){
       
-        // if request contains the word "echo", then print the word after in in your response
+        // if request contains the word "echo", then print the word after "echo" command in your response
         
         x=request.find("/",1);
         y=y=request_string.find(" ",x+1);
@@ -60,19 +60,41 @@ void handle_client(int client_fd,string directory_path){
       else if(request.substr(0,7)=="/files/"){
         string filename=request.substr(7);
         string path=directory_path+filename;
-        ifstream file(path, std::ios::binary);
-        if(file.is_open()){
-          stringstream buff;
-          buff << file.rdbuf();
-          string file_contents = buff.str();
-          http_response="HTTP/1.1 200 OK\r\n";
-          http_response+="Content-Type: application/octet-stream\r\n";
-          http_response+="Content-Length: "+to_string(file_contents.length())+"\r\n\r\n";
-          http_response+=file_contents;
+        if(request_string.find("Content-Length:")!=string::npos){
+          ofstream file(path);
+          if(!file){
+            cout<<"Failed to create the file\n";
+          }
+          else{
+            x=request_string.find("Content-Length:");
+            x=request_string.find(" ",x+1);
+            y=request_string.find("\r",x+1);
+            int length=stoi(request_string.substr(x+1,y-(x+1)));
+            x=request_string.find("\r\n",y+2);
+            x=request_string.find(" ",x+1);
+            y=request_string.find("\0",x+1);
+            string content=request_string.substr(x+1,y-(x+1));
+            file<<content;
+            file.close();
 
+            http_response="HTTP/1.1 201 Created\r\n\r\n";
+          }
         }
         else{
-          http_response="HTTP/1.1 404 Not Found\r\n\r\n";
+          ifstream file(path, std::ios::binary);
+          if(file.is_open()){
+            stringstream buff;
+            buff << file.rdbuf();
+            string file_contents = buff.str();
+            http_response="HTTP/1.1 200 OK\r\n";
+            http_response+="Content-Type: application/octet-stream\r\n";
+            http_response+="Content-Length: "+to_string(file_contents.length())+"\r\n\r\n";
+            http_response+=file_contents;
+  
+          }
+          else{
+            http_response="HTTP/1.1 404 Not Found\r\n\r\n";
+          }
         }
       }
       else{
