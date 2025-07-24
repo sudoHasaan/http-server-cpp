@@ -70,8 +70,8 @@ void handle_client(int client_fd,string directory_path){
             x=request_string.find(" ",x+1);
             y=request_string.find("\r",x+1);
             int length=stoi(request_string.substr(x+1,y-(x+1)));
-            y=request_string.find("\r\n",y+1);
-            y+=2;
+            y=request_string.find("\r\n\r\n",x+1);
+            y+=4;
             string content=request_string.substr(y,length);
             file<<content;
             file.close();
