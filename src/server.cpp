@@ -29,7 +29,7 @@ void handle_client(int client_fd,string directory_path){
       size_t y=request_string.find(" ",x+1); // end pos of response
       string http_response; // the response i will send
       string request=request_string.substr(x+1,y-(x+1)); // getting the request to give the appropriate response.
-      
+      string method = request_string.substr(0, request_string.find(" "));
       if(request=="/"){
         http_response = "HTTP/1.1 200 OK\r\n\r\n";
       }
@@ -60,8 +60,8 @@ void handle_client(int client_fd,string directory_path){
       else if(request.substr(0,7)=="/files/"){
         string filename=request.substr(7);
         string path=directory_path+filename;
-        if(request_string.find("Content-Length:")!=string::npos){
-          ofstream file(path+".txt");
+        if(method=="POST"){
+          ofstream file(path);
           if(!file){
             cout<<"Failed to create the file\n";
           }
@@ -70,7 +70,8 @@ void handle_client(int client_fd,string directory_path){
             x=request_string.find(" ",x+1);
             y=request_string.find("\r",x+1);
             int length=stoi(request_string.substr(x+1,y-(x+1)));
-            y+=4;
+            y=request_string.find("\r\n",y+1);
+            y+=2;
             string content=request_string.substr(y,length);
             file<<content;
             file.close();
@@ -78,7 +79,7 @@ void handle_client(int client_fd,string directory_path){
             http_response="HTTP/1.1 201 Created\r\n\r\n";
           }
         }
-        else{
+        else if(method=="GET"){
           ifstream file(path, std::ios::binary);
           if(file.is_open()){
             stringstream buff;
