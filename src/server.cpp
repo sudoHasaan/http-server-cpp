@@ -61,7 +61,7 @@ void handle_client(int client_fd,string directory_path){
         string filename=request.substr(7);
         string path=directory_path+filename;
         if(request_string.find("Content-Length:")!=string::npos){
-          ofstream file(path);
+          ofstream file(path+".txt");
           if(!file){
             cout<<"Failed to create the file\n";
           }
@@ -70,10 +70,8 @@ void handle_client(int client_fd,string directory_path){
             x=request_string.find(" ",x+1);
             y=request_string.find("\r",x+1);
             int length=stoi(request_string.substr(x+1,y-(x+1)));
-            x=request_string.find("\r\n",y+2);
-            x=request_string.find(" ",x+1);
-            y=request_string.find("\0",x+1);
-            string content=request_string.substr(x+1,y-(x+1));
+            y+=4;
+            string content=request_string.substr(y,length);
             file<<content;
             file.close();
 
