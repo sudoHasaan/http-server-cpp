@@ -10,8 +10,31 @@
 #include <thread>
 #include <fstream>
 #include <filesystem>
+#include<vector>
+#include<sstream>
 
 using namespace std;
+// a function to trim the spaces
+string trim(const string& s) {
+    string result;
+    bool started = false;
+
+    for (int i = 0; i < s.size(); i++) {
+        if (!started && s[i] == ' ') {
+            continue; // Skip leading spaces
+        } else {
+            started = true;
+            result += s[i];
+        }
+    }
+
+    // Now remove trailing spaces manually
+    while (!result.empty() && result.back() == ' ') {
+        result.pop_back();
+    }
+
+    return result;
+}
 
 // Function to handle a client
 void handle_client(int client_fd,string directory_path){
@@ -46,11 +69,24 @@ void handle_client(int client_fd,string directory_path){
         http_response+="\r\n";
         // Checking if the request string has Accept Encoding header
         if(request_string.find("Accept-Encoding:")!=string::npos){
+          bool check=false;
           x=request_string.find("Accept-Encoding:");
           x=request_string.find(" ",x+1);
           y=request_string.find("\r\n",x+1);
           string AcceptEncoding=request_string.substr(x+1,y-(x+1));
-          if(AcceptEncoding=="gzip"){
+          stringstream ss(AcceptEncoding);
+          string encoding;
+          vector<string> encodings;
+
+          while (getline(ss, encoding, ',')) {
+              encodings.push_back(trim(encoding));
+          }
+          for(int i=0;i<encodings.size();i++){
+            if(encodings[i]=="gzip"){
+              check=true;
+            }
+          }
+          if(check){
             http_response+="Content-Encoding: gzip";
             http_response+="\r\n";
           }
