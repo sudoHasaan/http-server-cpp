@@ -49,5 +49,5 @@ build/
 vcpkg_installed
 
 # Others
-# .codecrafters/
-# .vscode/
+.codecrafters/
+.vscode/

@@ -1,39 +1,83 @@
-[![progress-banner](https://backend.codecrafters.io/progress/http-server/1517dbe9-b93f-42f5-bd6a-7a19913a953d)](https://app.codecrafters.io/users/sudoHasaan?r=2qF)
+# Build Your Own HTTP Server in C++
 
-This is a starting point for C++ solutions to the
-["Build Your Own HTTP server" Challenge](https://app.codecrafters.io/courses/http-server/overview).
+This repository contains my implementation of a basic HTTP/1.1 server, built from the ground up using C++ and core networking libraries. This project was undertaken as part of the ["Build Your Own HTTP Server" challenge on CodeCrafters](https://app.codecrafters.io/courses/http-server/overview) to gain a deep, practical understanding of network programming and the HTTP protocol.
 
-[HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol) is the
-protocol that powers the web. In this challenge, you'll build a HTTP/1.1 server
-that is capable of serving multiple clients.
+The server is capable of handling multiple client connections, parsing HTTP requests, routing to different endpoints, and generating dynamic responses.
 
-Along the way you'll learn about TCP servers,
-[HTTP request syntax](https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html),
-and more.
+---
 
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
+## Key Features Implemented
 
-# Passing the first stage
+The server was built incrementally, with each stage adding a new layer of functionality. The final implementation includes:
 
-The entry point for your HTTP server implementation is in `src/server.cpp`.
-Study and uncomment the relevant code, and push your changes to pass the first
-stage:
+*   **TCP Server Foundation:** Establishes a listening TCP socket on port 4221, capable of accepting and handling incoming client connections.
 
-```sh
-git add .
-git commit -m "pass 1st stage" # any msg
-git push origin master
-```
+*   **HTTP Request/Response Handling:**
+    *   **Request Parsing:** Parses the request line to extract the HTTP method (GET/POST) and the URL path for routing.
+    *   **Header Parsing:** Reads and interprets request headers, such as `User-Agent` and `Accept-Encoding`.
+    *   **Response Generation:** Constructs valid `HTTP/1.1` responses with a status line, appropriate headers, and a message body.
 
-Time to move on to the next stage!
+*   **Endpoint Routing:** Implements a routing system to handle different paths:
+    *   `GET /`: Responds with a `200 OK`.
+    *   `GET /echo/{str}`: A dynamic endpoint that echoes the string from the URL back in the response body.
+    *   `GET /user-agent`: Parses the `User-Agent` header from the request and returns its value in the response body.
+    *   Any other `GET` path: Responds with a `404 Not Found`.
 
-# Stage 2 & beyond
+*   **Filesystem Interaction:**
+    *   **File Serving (GET):** Supports serving files from a server-specified directory. Requests to `/files/{filename}` will return the contents of the requested file with an `application/octet-stream` content type.
+    *   **File Uploads (POST):** Supports file creation by handling `POST` requests to `/files/{filename}`. It parses the request body and writes its contents to a new file on the server, responding with `201 Created`.
 
-Note: This section is for stages 2 and beyond.
+*   **Content Negotiation (Compression):**
+    *   Implements the `Accept-Encoding` negotiation flow. If a client's request indicates support for `gzip`, the server correctly includes the `Content-Encoding: gzip` header in its response. (Note: Actual body compression is a future extension).
 
-1. Ensure you have `cmake` installed locally
-1. Run `./your_program.sh` to run your program, which is implemented in
-   `src/server.cpp`.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+---
+
+## Technology Stack
+
+*   **Language:** C++
+*   **Core APIs:**
+    *   **POSIX Sockets API** (`sys/socket.h`, `arpa/inet.h`) for all low-level network I/O.
+    *   **C++ Standard Library** (`<iostream>`, `<string>`, `<fstream>`, `<sstream>`) for I/O, string manipulation, and file handling.
+*   **Build System:** CMake
+*   **Development Environment:** Windows Subsystem for Linux (WSL)
+
+---
+
+## How to Build and Run
+
+#### Prerequisites
+*   A C++ compiler (like `g++`)
+*   `cmake`
+
+#### Steps
+1.  Clone the repository:
+    ```sh
+    git clone <your-repo-url>
+    cd <your-repo-folder>
+    ```
+
+2.  Build the project using CMake:
+    ```sh
+    cmake -B build
+    cmake --build build
+    ```
+    This will create an executable at `build/server`.
+
+3.  Run the server:
+    The server accepts a `--directory` argument to specify the root for file operations.
+    ```sh
+    ./build/server --directory /path/to/your/files
+    ```
+
+---
+
+## Project Journey & Learnings
+
+Building this server from scratch was an incredible learning experience. It solidified my understanding of fundamental concepts that are often abstracted away by modern frameworks, including:
+*   The raw, text-based nature of the HTTP protocol.
+*   The lifecycle of a TCP socket: from creation and binding to listening and accepting connections.
+*   The importance of meticulous string parsing for routing and header/body extraction.
+*   Low-level system interactions, such as filesystem I/O and command-line argument parsing.
+*   The client-server negotiation process for features like content encoding.
+
+Debugging issues like off-by-one errors in buffer handling and incorrect `Content-Length` headers provided invaluable, hands-on experience in network programming.
