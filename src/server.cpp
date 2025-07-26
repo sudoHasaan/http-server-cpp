@@ -45,10 +45,11 @@ void handle_client(int client_fd,string directory_path){
         http_response+=to_string(echo_str.length());
         // Checking if the request string has Accept Encoding header
         if(request_string.find("Accept-Encoding:")!=string::npos){
+          cout<<"entered"<<endl;
           x=request_string.find("Accept-Encoding:");
           x=request_string.find(" ",x+1);
           y=request_string.find("\r\n",x+1);
-          string AcceptEncoding=request.substr(x+1,y-(x+1));
+          string AcceptEncoding=request_string.substr(x+1,y-(x+1));
           if(AcceptEncoding=="gzip"){
             http_response+="Content-Encoding: gzip";
   
