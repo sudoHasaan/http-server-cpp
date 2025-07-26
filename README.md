@@ -27,9 +27,10 @@ The server was built incrementally, with each stage adding a new layer of functi
     *   **File Serving (GET):** Supports serving files from a server-specified directory. Requests to `/files/{filename}` will return the contents of the requested file with an `application/octet-stream` content type.
     *   **File Uploads (POST):** Supports file creation by handling `POST` requests to `/files/{filename}`. It parses the request body and writes its contents to a new file on the server, responding with `201 Created`.
 
-*   **Content Negotiation (Compression):**
-    *   Implements the `Accept-Encoding` negotiation flow. If a client's request indicates support for `gzip`, the server correctly includes the `Content-Encoding: gzip` header in its response. (Note: Actual body compression is a future extension).
-
+*   **HTTP Content Negotiation (Compression):**
+    *   **Robust Header Parsing:** Implements logic to correctly parse comma-separated values from the `Accept-Encoding` header.
+    *   **Compression Scheme Selection:** The server intelligently scans the list of encodings supported by the client and determines if `gzip` is a valid option.
+    *   **Conditional Encoding:** If the client supports `gzip`, the server correctly includes the `Content-Encoding: gzip` header in its response. (Note: Actual body compression is a future extension).
 ---
 
 ## Technology Stack
