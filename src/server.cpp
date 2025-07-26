@@ -43,6 +43,7 @@ void handle_client(int client_fd,string directory_path){
         string echo_str=request.substr(x+1,y-(x+1));
         http_response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ";
         http_response+=to_string(echo_str.length());
+        http_response+="\r\n";
         // Checking if the request string has Accept Encoding header
         if(request_string.find("Accept-Encoding:")!=string::npos){
           cout<<"entered"<<endl;
