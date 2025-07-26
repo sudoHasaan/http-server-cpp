@@ -50,6 +50,7 @@ void handle_client(int client_fd,string directory_path){
         string AcceptEncoding=request.substr(x+1,y-(x+1));
         if(AcceptEncoding=="gzip"){
           http_response+="Content-Encoding: gzip";
+          
         }
         http_response+="\r\n\r\n";
         http_response+=echo_str;
