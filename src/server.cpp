@@ -109,7 +109,7 @@ void handle_client(int client_fd,string directory_path){
           // if request contains the word "echo", then print the word after "echo" command in your response
           
           x=request.find("/",1);
-          y=request_string.find(" ",x+1);
+          y=request.find(" ",x+1);
           
           string echo_str=request.substr(x+1,y-(x+1));
           http_response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ";
@@ -154,7 +154,6 @@ void handle_client(int client_fd,string directory_path){
             http_response+="\r\n";
             http_response+=echo_str;
           }
-          
         }
         else if(request=="/user-agent"){
           x=request_string.find("User-Agent:");
