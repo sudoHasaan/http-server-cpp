@@ -7,13 +7,15 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <thread>
-#include <fstream>
-#include <filesystem>
-#include<vector>
-#include<sstream>
+#include <thread>     // used for concurrent clients
+#include <fstream>    // for reading and creating files
+#include <filesystem> // used for finding the size of a file
+#include<vector>      // standard vector library
+#include<sstream>     // string stream library for easier string functions
+#include <zlib.h>     // used for GZIP compression
 
 using namespace std;
+
 // a function to trim the spaces
 string trim(const string& s) {
     string result;
@@ -35,7 +37,52 @@ string trim(const string& s) {
 
     return result;
 }
+// --------------------------------------------------------------------
+// Function for Gzip compression
 
+string gzip_compression(const string& input){
+  // setting up the z_stream struct and initializing it to 0
+  z_stream zs;
+  memset(&zs,0,sizeof(zs));
+
+  // deflateInit2 is used to specify gzip format
+  // 15 is the default window size and 16 is added to the window size to enable gzip encoding.
+  if (deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, 15 + 16, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
+
+        throw(std::runtime_error("deflateInit2 failed while compressing."));
+  }
+
+  // 2. Set the input data
+  zs.next_in = (Bytef*)input.data();
+  zs.avail_in = input.size();
+
+  // 3. create and set output buffer
+  int ret;
+  char outbuffer[32768]; // 32kb buffer
+  string compressed_string;
+
+  // 4. main compression loop
+  do {
+    zs.next_out = (Bytef*)outbuffer;
+    zs.avail_out = sizeof(outbuffer);
+    ret = deflate(&zs, Z_FINISH);
+    if (compressed_string.size() < zs.total_out) {
+        compressed_string.append(outbuffer, zs.total_out - compressed_string.size());
+    }
+  } while (ret == Z_OK);
+
+  // 5. Clean up and free internal zlib resources
+  deflateEnd(&zs);
+
+  if (ret != Z_STREAM_END) {
+    throw(std::runtime_error("Exception during zlib compression: " + std::to_string(ret)));
+  }
+
+
+  return compressed_string;
+
+}
+// --------------------------------------------------------------------
 // Function to handle a client
 void handle_client(int client_fd,string directory_path){
   if (client_fd > 0){
@@ -65,8 +112,6 @@ void handle_client(int client_fd,string directory_path){
         
         string echo_str=request.substr(x+1,y-(x+1));
         http_response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ";
-        http_response+=to_string(echo_str.length());
-        http_response+="\r\n";
         // Checking if the request string has Accept Encoding header
         if(request_string.find("Accept-Encoding:")!=string::npos){
           bool check=false;
@@ -87,9 +132,20 @@ void handle_client(int client_fd,string directory_path){
             }
           }
           if(check){
+            string compressed=gzip_compression(echo_str);
+            http_response+=to_string(compressed.length());
+            http_response+="\r\n";
             http_response+="Content-Encoding: gzip";
             http_response+="\r\n";
           }
+          else{
+            http_response+=to_string(echo_str.length());
+            http_response+="\r\n";
+          }
+        }
+        else{
+          http_response+=to_string(echo_str.length());
+          http_response+="\r\n";
         }
         http_response+="\r\n";
         http_response+=echo_str;
