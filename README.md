@@ -8,9 +8,13 @@ The server is capable of handling multiple concurrent clients, parsing and routi
 
 ---
 
-## Features Implemented
+## Key Features Implemented
 
-*   **Concurrent Client Handling:** Utilizes C++ threads (`std::thread`) to handle multiple client connections simultaneously. Each incoming connection is dispatched to a worker thread, allowing the main thread to immediately accept new connections.
+The server was built incrementally, with each stage adding a new layer of functionality. The final implementation includes:
+
+*   **Concurrent & Persistent Connections:**
+    *   **Multi-Threading:** Utilizes C++ threads (`std::thread`) to handle multiple client connections simultaneously. Each incoming connection is dispatched to its own worker thread.
+    *   **HTTP/1.1 Keep-Alive:** Implements persistent connections, allowing a single TCP connection to be reused for multiple sequential requests from the same client, significantly reducing latency. The server maintains the connection until the client explicitly closes it.
 
 *   **Robust HTTP Parsing:**
     *   **Request Line:** Parses the request line to extract the HTTP method (`GET`/`POST`), URL path, and protocol version.
@@ -27,13 +31,13 @@ The server is capable of handling multiple concurrent clients, parsing and routi
 
 *   **Gzip Content Compression:**
     *   **Content Negotiation:** Intelligently parses the `Accept-Encoding` header, tokenizing comma-separated values to accurately detect client support for `gzip`.
-    *   **In-Memory Compression:** Integrates the industry-standard `zlib` library to perform `gzip` compression on the response body before sending.
+    *   **Third-Party Library Integration:** Successfully integrates and links the industry-standard `zlib` library to perform data compression.
+    *   **Dynamic Gzip Compression:** If the client supports it, the server compresses the response body in-memory using `zlib` before sending it.
     *   **Correct Header Generation:** When content is compressed, the server correctly adds the `Content-Encoding: gzip` header and calculates the `Content-Length` based on the size of the *compressed* binary data.
 
 *   **Filesystem Interaction:**
     *   The server can be configured with a root directory via command-line arguments (`--directory`).
     *   Uses C++ file streams (`<fstream>`) for both reading existing files and writing new ones.
-
 ---
 
 ## Technical Details
