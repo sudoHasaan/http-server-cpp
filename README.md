@@ -13,12 +13,13 @@ The server is capable of handling multiple concurrent clients, parsing and routi
 The server was built incrementally, with each stage adding a new layer of functionality. The final implementation includes:
 
 *   **Concurrent & Persistent Connections:**
-    *   **Multi-Threading:** Utilizes C++ threads (`std::thread`) to handle multiple client connections simultaneously. Each incoming connection is dispatched to its own worker thread.
-    *   **HTTP/1.1 Keep-Alive:** Implements persistent connections, allowing a single TCP connection to be reused for multiple sequential requests from the same client, significantly reducing latency. The server maintains the connection until the client explicitly closes it.
+    *   **Multi-Threading:** Utilizes C++ threads (`std::thread`) to handle multiple client connections simultaneously. Each incoming connection is dispatched to its own worker thread for processing.
+    *   **HTTP/1.1 Keep-Alive:** Implements persistent connections by default, allowing a single TCP connection to be reused for multiple sequential requests from the same client to reduce latency.
+    *   **Connection Management:** Correctly handles the `Connection: close` header. If a client requests to close the connection, the server acknowledges by including the header in its response and gracefully closes the connection after the response is sent.
 
 *   **Robust HTTP Parsing:**
     *   **Request Line:** Parses the request line to extract the HTTP method (`GET`/`POST`), URL path, and protocol version.
-    *   **Headers:** Scans request headers to extract key-value pairs, specifically handling `User-Agent`, `Accept-Encoding`, and `Content-Length`.
+    *   **Headers:** Scans request headers to extract key-value pairs, specifically handling `User-Agent`, `Accept-Encoding`, `Content-Length`, and `Connection`.
     *   **Request Body:** Correctly extracts the request body payload for `POST` requests based on the `Content-Length` header.
 
 *   **Dynamic Endpoint Routing:** Implements a routing system to handle different paths and methods:
