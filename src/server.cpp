@@ -88,7 +88,8 @@ void handle_client(int client_fd,string directory_path){
   if (client_fd > 0){
     cout << "Client connected\n";
     char buffer[1024];
-    while(true){
+    bool connection=true;
+    while(connection){
       memset(buffer, 0, sizeof(buffer));
       int bytes_received=read(client_fd, buffer, sizeof(buffer)-1);
       if (bytes_received <= 0) {
@@ -106,6 +107,9 @@ void handle_client(int client_fd,string directory_path){
         string http_response; // the response i will send
         string request=request_string.substr(x+1,y-(x+1)); // getting the request to give the appropriate response.
         string method = request_string.substr(0, request_string.find(" "));
+        if(request_string.find("Connection: close")!=string::npos && request_string.find("Connection: close")<request_string.length()){
+          connection=false;
+        }
         if(request=="/"){
           http_response = "HTTP/1.1 200 OK\r\n\r\n";
         }
