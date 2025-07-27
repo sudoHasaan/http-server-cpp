@@ -86,59 +86,67 @@ string gzip_compression(const string& input){
 // Function to handle a client
 void handle_client(int client_fd,string directory_path){
   if (client_fd > 0){
-    std::cout << "Client connected\n";
-    char buffer[1024];
-    int bytes_recieved=read(client_fd, buffer, sizeof(buffer)-1);
-    if(bytes_recieved<0){
-      cerr<<"Failed to read from server\n";
-      return ;
-    }
-    else{
-      string request_string(buffer);
-      size_t x=request_string.find(" "); // start pos of response
-      size_t y=request_string.find(" ",x+1); // end pos of response
-      string http_response; // the response i will send
-      string request=request_string.substr(x+1,y-(x+1)); // getting the request to give the appropriate response.
-      string method = request_string.substr(0, request_string.find(" "));
-      if(request=="/"){
-        http_response = "HTTP/1.1 200 OK\r\n\r\n";
+    while(true){
+      cout << "Client connected\n";
+      char buffer[1024];
+      int bytes_recieved=read(client_fd, buffer, sizeof(buffer)-1);
+      if(bytes_recieved<0){
+        cerr<<"Failed to read from server\n";
+        return ;
       }
-      else if(request.substr(0, 6)=="/echo/"){
-      
-        // if request contains the word "echo", then print the word after "echo" command in your response
+      else{
+        string request_string(buffer);
+        size_t x=request_string.find(" "); // start pos of response
+        size_t y=request_string.find(" ",x+1); // end pos of response
+        string http_response; // the response i will send
+        string request=request_string.substr(x+1,y-(x+1)); // getting the request to give the appropriate response.
+        string method = request_string.substr(0, request_string.find(" "));
+        if(request=="/"){
+          http_response = "HTTP/1.1 200 OK\r\n\r\n";
+        }
+        else if(request.substr(0, 6)=="/echo/"){
         
-        x=request.find("/",1);
-        y=request_string.find(" ",x+1);
-        
-        string echo_str=request.substr(x+1,y-(x+1));
-        http_response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ";
-        // Checking if the request string has Accept Encoding header
-        if(request_string.find("Accept-Encoding:")!=string::npos){
-          bool check=false;
-          x=request_string.find("Accept-Encoding:");
-          x=request_string.find(" ",x+1);
-          y=request_string.find("\r\n",x+1);
-          string AcceptEncoding=request_string.substr(x+1,y-(x+1));
-          stringstream ss(AcceptEncoding);
-          string encoding;
-          vector<string> encodings;
-
-          while (getline(ss, encoding, ',')) {
-              encodings.push_back(trim(encoding));
-          }
-          for(int i=0;i<encodings.size();i++){
-            if(encodings[i]=="gzip"){
-              check=true;
+          // if request contains the word "echo", then print the word after "echo" command in your response
+          
+          x=request.find("/",1);
+          y=request_string.find(" ",x+1);
+          
+          string echo_str=request.substr(x+1,y-(x+1));
+          http_response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ";
+          // Checking if the request string has Accept Encoding header
+          if(request_string.find("Accept-Encoding:")!=string::npos){
+            bool check=false;
+            x=request_string.find("Accept-Encoding:");
+            x=request_string.find(" ",x+1);
+            y=request_string.find("\r\n",x+1);
+            string AcceptEncoding=request_string.substr(x+1,y-(x+1));
+            stringstream ss(AcceptEncoding);
+            string encoding;
+            vector<string> encodings;
+  
+            while (getline(ss, encoding, ',')) {
+                encodings.push_back(trim(encoding));
             }
-          }
-          if(check){
-            string compressed=gzip_compression(echo_str);
-            http_response+=to_string(compressed.length());
-            http_response+="\r\n";
-            http_response+="Content-Encoding: gzip";
-            http_response+="\r\n";
-            http_response+="\r\n";
-            http_response+=compressed;
+            for(int i=0;i<encodings.size();i++){
+              if(encodings[i]=="gzip"){
+                check=true;
+              }
+            }
+            if(check){
+              string compressed=gzip_compression(echo_str);
+              http_response+=to_string(compressed.length());
+              http_response+="\r\n";
+              http_response+="Content-Encoding: gzip";
+              http_response+="\r\n";
+              http_response+="\r\n";
+              http_response+=compressed;
+            }
+            else{
+              http_response+=to_string(echo_str.length());
+              http_response+="\r\n";
+              http_response+="\r\n";
+              http_response+=echo_str;
+            }
           }
           else{
             http_response+=to_string(echo_str.length());
@@ -146,73 +154,68 @@ void handle_client(int client_fd,string directory_path){
             http_response+="\r\n";
             http_response+=echo_str;
           }
+          
+        }
+        else if(request=="/user-agent"){
+          x=request_string.find("User-Agent:");
+          x=request_string.find(" ",x+1);
+          y=request_string.find("\r",x+1);
+          string value=request_string.substr(x+1,y-(x+1));
+          http_response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ";
+          http_response+=to_string(value.length());
+          http_response+="\r\n\r\n";
+          http_response+=value;
+        }
+        else if(request.substr(0,7)=="/files/"){
+          string filename=request.substr(7);
+          string path=directory_path+filename;
+          if(method=="POST"){
+            ofstream file(path);
+            if(!file){
+              cout<<"Failed to create the file\n";
+            }
+            else{
+              x=request_string.find("Content-Length:");
+              x=request_string.find(" ",x+1);
+              y=request_string.find("\r",x+1);
+              int length=stoi(request_string.substr(x+1,y-(x+1)));
+              y=request_string.find("\r\n\r\n",x+1);
+              y+=4;
+              string content=request_string.substr(y,length);
+              file<<content;
+              file.close();
+  
+              http_response="HTTP/1.1 201 Created\r\n\r\n";
+            }
+          }
+          else if(method=="GET"){
+            ifstream file(path, std::ios::binary);
+            if(file.is_open()){
+              stringstream buff;
+              buff << file.rdbuf();
+              string file_contents = buff.str();
+              http_response="HTTP/1.1 200 OK\r\n";
+              http_response+="Content-Type: application/octet-stream\r\n";
+              http_response+="Content-Length: "+to_string(file_contents.length())+"\r\n\r\n";
+              http_response+=file_contents;
+    
+            }
+            else{
+              http_response="HTTP/1.1 404 Not Found\r\n\r\n";
+            }
+          }
         }
         else{
-          http_response+=to_string(echo_str.length());
-          http_response+="\r\n";
-          http_response+="\r\n";
-          http_response+=echo_str;
+          http_response = "HTTP/1.1 404 Not Found\r\n\r\n";
+         
         }
-        
-      }
-      else if(request=="/user-agent"){
-        x=request_string.find("User-Agent:");
-        x=request_string.find(" ",x+1);
-        y=request_string.find("\r",x+1);
-        string value=request_string.substr(x+1,y-(x+1));
-        http_response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ";
-        http_response+=to_string(value.length());
-        http_response+="\r\n\r\n";
-        http_response+=value;
-      }
-      else if(request.substr(0,7)=="/files/"){
-        string filename=request.substr(7);
-        string path=directory_path+filename;
-        if(method=="POST"){
-          ofstream file(path);
-          if(!file){
-            cout<<"Failed to create the file\n";
-          }
-          else{
-            x=request_string.find("Content-Length:");
-            x=request_string.find(" ",x+1);
-            y=request_string.find("\r",x+1);
-            int length=stoi(request_string.substr(x+1,y-(x+1)));
-            y=request_string.find("\r\n\r\n",x+1);
-            y+=4;
-            string content=request_string.substr(y,length);
-            file<<content;
-            file.close();
-
-            http_response="HTTP/1.1 201 Created\r\n\r\n";
-          }
-        }
-        else if(method=="GET"){
-          ifstream file(path, std::ios::binary);
-          if(file.is_open()){
-            stringstream buff;
-            buff << file.rdbuf();
-            string file_contents = buff.str();
-            http_response="HTTP/1.1 200 OK\r\n";
-            http_response+="Content-Type: application/octet-stream\r\n";
-            http_response+="Content-Length: "+to_string(file_contents.length())+"\r\n\r\n";
-            http_response+=file_contents;
+        write(client_fd, http_response.c_str(), http_response.length());
   
-          }
-          else{
-            http_response="HTTP/1.1 404 Not Found\r\n\r\n";
-          }
-        }
       }
-      else{
-        http_response = "HTTP/1.1 404 Not Found\r\n\r\n";
-       
-      }
-      write(client_fd, http_response.c_str(), http_response.length());
+  
+      close(client_fd);
 
     }
-
-    close(client_fd);
   
   }
   else{
@@ -280,6 +283,7 @@ int main(int argc, char **argv) {
     thread worker_thread(handle_client,client_fd,directory_path);
     worker_thread.detach();
   }
+
   close(server_fd);
   
   return 0;
