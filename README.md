@@ -1,46 +1,53 @@
-# Build Your Own HTTP Server in C++
+# C++ HTTP/1.1 Server
 
-This repository contains my implementation of a basic HTTP/1.1 server, built from the ground up using C++ and core networking libraries. This project was undertaken as part of the ["Build Your Own HTTP Server" challenge on CodeCrafters](https://app.codecrafters.io/courses/http-server/overview) to gain a deep, practical understanding of network programming and the HTTP protocol.
+This repository contains my implementation of a multi-threaded HTTP/1.1 server, built from the ground up using C++ and core networking libraries. This project was undertaken as part of the **CodeCrafters "Build Your Own HTTP Server" challenge** to gain a deep, practical understanding of network protocols, concurrency, and system-level programming.
 
-The server is capable of handling multiple client connections, parsing HTTP requests, routing to different endpoints, and generating dynamic responses.
+The server is capable of handling multiple concurrent clients, parsing and routing HTTP requests, serving static files, creating new files via POST requests, and negotiating content compression with clients.
+
+[![progress-banner](https://backend.codecrafters.io/progress/http-server/1517dbe9-b93f-42f5-bd6a-7a19913a953d)](https://app.codecrafters.io/users/sudoHasaan?r=2qF)
 
 ---
 
-## Key Features Implemented
+## Features Implemented
 
-The server was built incrementally, with each stage adding a new layer of functionality. The final implementation includes:
+*   **Concurrent Client Handling:** Utilizes C++ threads (`std::thread`) to handle multiple client connections simultaneously. Each incoming connection is dispatched to a worker thread, allowing the main thread to immediately accept new connections.
 
-*   **TCP Server Foundation:** Establishes a listening TCP socket on port 4221, capable of accepting and handling incoming client connections.
+*   **Robust HTTP Parsing:**
+    *   **Request Line:** Parses the request line to extract the HTTP method (`GET`/`POST`), URL path, and protocol version.
+    *   **Headers:** Scans request headers to extract key-value pairs, specifically handling `User-Agent`, `Accept-Encoding`, and `Content-Length`.
+    *   **Request Body:** Correctly extracts the request body payload for `POST` requests based on the `Content-Length` header.
 
-*   **HTTP Request/Response Handling:**
-    *   **Request Parsing:** Parses the request line to extract the HTTP method (GET/POST) and the URL path for routing.
-    *   **Header Parsing:** Reads and interprets request headers, such as `User-Agent` and `Accept-Encoding`.
-    *   **Response Generation:** Constructs valid `HTTP/1.1` responses with a status line, appropriate headers, and a message body.
-
-*   **Endpoint Routing:** Implements a routing system to handle different paths:
+*   **Dynamic Endpoint Routing:** Implements a routing system to handle different paths and methods:
     *   `GET /`: Responds with a `200 OK`.
-    *   `GET /echo/{str}`: A dynamic endpoint that echoes the string from the URL back in the response body.
-    *   `GET /user-agent`: Parses the `User-Agent` header from the request and returns its value in the response body.
-    *   Any other `GET` path: Responds with a `404 Not Found`.
+    *   `GET /echo/{str}`: A dynamic endpoint that echoes the requested string back to the client.
+    *   `GET /user-agent`: Returns the client's `User-Agent` string in the response body.
+    *   `GET /files/{filename}`: Serves the contents of a specified file from a server-configured directory.
+    *   `POST /files/{filename}`: Creates a new file on the server with the contents of the request body.
+    *   Responds with `404 Not Found` for any other routes.
+
+*   **Gzip Content Compression:**
+    *   **Content Negotiation:** Intelligently parses the `Accept-Encoding` header, tokenizing comma-separated values to accurately detect client support for `gzip`.
+    *   **In-Memory Compression:** Integrates the industry-standard `zlib` library to perform `gzip` compression on the response body before sending.
+    *   **Correct Header Generation:** When content is compressed, the server correctly adds the `Content-Encoding: gzip` header and calculates the `Content-Length` based on the size of the *compressed* binary data.
 
 *   **Filesystem Interaction:**
-    *   **File Serving (GET):** Supports serving files from a server-specified directory. Requests to `/files/{filename}` will return the contents of the requested file with an `application/octet-stream` content type.
-    *   **File Uploads (POST):** Supports file creation by handling `POST` requests to `/files/{filename}`. It parses the request body and writes its contents to a new file on the server, responding with `201 Created`.
+    *   The server can be configured with a root directory via command-line arguments (`--directory`).
+    *   Uses C++ file streams (`<fstream>`) for both reading existing files and writing new ones.
 
-*   **HTTP Content Negotiation (Compression):**
-    *   **Robust Header Parsing:** Implements logic to correctly parse comma-separated values from the `Accept-Encoding` header.
-    *   **Compression Scheme Selection:** The server intelligently scans the list of encodings supported by the client and determines if `gzip` is a valid option.
-    *   **Conditional Encoding:** If the client supports `gzip`, the server correctly includes the `Content-Encoding: gzip` header in its response. (Note: Actual body compression is a future extension).
 ---
 
-## Technology Stack
+## Technical Details
 
-*   **Language:** C++
-*   **Core APIs:**
-    *   **POSIX Sockets API** (`sys/socket.h`, `arpa/inet.h`) for all low-level network I/O.
-    *   **C++ Standard Library** (`<iostream>`, `<string>`, `<fstream>`, `<sstream>`) for I/O, string manipulation, and file handling.
-*   **Build System:** CMake
-*   **Development Environment:** Windows Subsystem for Linux (WSL)
+*   **Language:** C++11 (or newer)
+*   **Core APIs & Libraries:**
+    *   **POSIX Sockets API** (`<sys/socket.h>`, `<arpa/inet.h>`) for all low-level network I/O.
+    *   **C++ Standard Library:**
+        *   `<thread>` for concurrency.
+        *   `<string>`, `<vector>`, `<sstream>` for robust string parsing and data handling.
+        *   `<fstream>` for all filesystem operations.
+    *   **zlib (`<zlib.h>`)**: For `gzip` compression.
+*   **Build System:** Configured for `g++` compilation with `-pthread` and `-lz` flags.
+*   **Development Environment:** Developed and tested within Windows Subsystem for Linux (WSL).
 
 ---
 
@@ -48,7 +55,7 @@ The server was built incrementally, with each stage adding a new layer of functi
 
 #### Prerequisites
 *   A C++ compiler (like `g++`)
-*   `cmake`
+*   The `zlib` development library (`sudo apt install zlib1g-dev` on Debian/Ubuntu)
 
 #### Steps
 1.  Clone the repository:
@@ -57,28 +64,27 @@ The server was built incrementally, with each stage adding a new layer of functi
     cd <your-repo-folder>
     ```
 
-2.  Build the project using CMake:
+2.  Compile the server:
+    The `-pthread` flag is required for `std::thread` and `-lz` is for linking `zlib`.
     ```sh
-    cmake -B build
-    cmake --build build
+    g++ src/server.cpp -o server -pthread -lz
     ```
-    This will create an executable at `build/server`.
 
 3.  Run the server:
-    The server accepts a `--directory` argument to specify the root for file operations.
+    The server accepts a `--directory` argument to specify the root for file operations. If omitted, it defaults to the current directory.
     ```sh
-    ./build/server --directory /path/to/your/files
+    ./server --directory /tmp/files/
     ```
 
 ---
 
-## Project Journey & Learnings
+## Project Journey & Key Learnings
 
-Building this server from scratch was an incredible learning experience. It solidified my understanding of fundamental concepts that are often abstracted away by modern frameworks, including:
+Building this server from scratch was an incredible learning experience in low-level systems programming. It solidified my understanding of fundamental concepts often abstracted away by modern frameworks, including:
 *   The raw, text-based nature of the HTTP protocol.
-*   The lifecycle of a TCP socket: from creation and binding to listening and accepting connections.
-*   The importance of meticulous string parsing for routing and header/body extraction.
-*   Low-level system interactions, such as filesystem I/O and command-line argument parsing.
-*   The client-server negotiation process for features like content encoding.
+*   The lifecycle of a TCP socket: from `socket()` to `bind()`, `listen()`, and `accept()`.
+*   The challenges and solutions for handling multiple clients concurrently using threads.
+*   Meticulous string parsing for routing and extracting data from requests.
+*   The practical application of integrating and linking third-party C libraries like `zlib` into a C++ project.
 
-Debugging issues like off-by-one errors in buffer handling and incorrect `Content-Length` headers provided invaluable, hands-on experience in network programming.
+Debugging issues related to concurrency, off-by-one errors in buffer handling, and dynamic `Content-Length` calculation provided invaluable, hands-on experience in building robust network applications.

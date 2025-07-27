@@ -137,18 +137,22 @@ void handle_client(int client_fd,string directory_path){
             http_response+="\r\n";
             http_response+="Content-Encoding: gzip";
             http_response+="\r\n";
+            http_response+="\r\n";
+            http_response+=compressed;
           }
           else{
             http_response+=to_string(echo_str.length());
             http_response+="\r\n";
+            http_response+="\r\n";
+            http_response+=echo_str;
           }
         }
         else{
           http_response+=to_string(echo_str.length());
           http_response+="\r\n";
+          http_response+="\r\n";
+          http_response+=echo_str;
         }
-        http_response+="\r\n";
-        http_response+=echo_str;
         
       }
       else if(request=="/user-agent"){
