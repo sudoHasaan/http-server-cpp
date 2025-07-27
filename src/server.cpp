@@ -86,13 +86,13 @@ string gzip_compression(const string& input){
 // Function to handle a client
 void handle_client(int client_fd,string directory_path){
   if (client_fd > 0){
+    cout << "Client connected\n";
+    char buffer[1024];
     while(true){
-      cout << "Client connected\n";
-      char buffer[1024];
       int bytes_recieved=read(client_fd, buffer, sizeof(buffer)-1);
       if(bytes_recieved<0){
         cerr<<"Failed to read from server\n";
-        return ;
+        break;
       }
       else{
         string request_string(buffer);
@@ -212,10 +212,9 @@ void handle_client(int client_fd,string directory_path){
         write(client_fd, http_response.c_str(), http_response.length());
   
       }
-  
-      close(client_fd);
-
     }
+
+    close(client_fd);
   
   }
   else{
@@ -283,7 +282,7 @@ int main(int argc, char **argv) {
     thread worker_thread(handle_client,client_fd,directory_path);
     worker_thread.detach();
   }
-
+  
   close(server_fd);
   
   return 0;
