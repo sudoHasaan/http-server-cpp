@@ -87,8 +87,8 @@ string gzip_compression(const string& input){
 void handle_client(int client_fd,string directory_path){
   if (client_fd > 0){
     cout << "Client connected\n";
-    char buffer[1024];
     while(true){
+      char buffer[1024];
       int bytes_recieved=read(client_fd, buffer, sizeof(buffer)-1);
       if(bytes_recieved<0){
         cerr<<"Failed to read from server\n";
@@ -212,6 +212,7 @@ void handle_client(int client_fd,string directory_path){
         write(client_fd, http_response.c_str(), http_response.length());
   
       }
+
     }
 
     close(client_fd);
