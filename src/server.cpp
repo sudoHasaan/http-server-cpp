@@ -91,9 +91,13 @@ void handle_client(int client_fd,string directory_path){
     while(true){
       memset(buffer, 0, sizeof(buffer));
       int bytes_received=read(client_fd, buffer, sizeof(buffer)-1);
-      if(bytes_received<0){
-        cerr<<"Failed to read from server\n";
-        break;
+      if (bytes_received <= 0) {
+        if (bytes_received == 0) {
+            cout << "Client disconnected gracefully." << endl;
+        } else {
+            cerr << "Error reading from server." << endl;
+        }
+        break; // Exit the loop in BOTH cases
       }
       else{
         string request_string(buffer, bytes_received);
@@ -106,12 +110,10 @@ void handle_client(int client_fd,string directory_path){
           http_response = "HTTP/1.1 200 OK\r\n\r\n";
         }
         else if(request.substr(0, 6)=="/echo/"){
-        
           // if request contains the word "echo", then print the word after "echo" command in your response
           
           x=request.find("/",1);
           y=request.find(" ",x+1);
-          
           string echo_str=request.substr(x+1,y-(x+1));
           http_response="HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ";
           // Checking if the request string has Accept Encoding header
@@ -124,7 +126,6 @@ void handle_client(int client_fd,string directory_path){
             stringstream ss(AcceptEncoding);
             string encoding;
             vector<string> encodings;
-  
             while (getline(ss, encoding, ',')) {
                 encodings.push_back(trim(encoding));
             }
@@ -143,7 +144,6 @@ void handle_client(int client_fd,string directory_path){
               http_response+=compressed;
             }
             else{
-              cout<<"entered"<<endl;
               http_response+=to_string(echo_str.length());
               http_response+="\r\n";
               http_response+="\r\n";
@@ -211,7 +211,6 @@ void handle_client(int client_fd,string directory_path){
          
         }
         write(client_fd, http_response.c_str(), http_response.length());
-  
       }
 
     }
