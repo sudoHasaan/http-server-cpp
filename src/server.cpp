@@ -90,13 +90,13 @@ void handle_client(int client_fd,string directory_path){
     char buffer[1024];
     while(true){
       memset(buffer, 0, sizeof(buffer));
-      int bytes_recieved=read(client_fd, buffer, sizeof(buffer)-1);
-      if(bytes_recieved<0){
+      int bytes_received=read(client_fd, buffer, sizeof(buffer)-1);
+      if(bytes_received<0){
         cerr<<"Failed to read from server\n";
         break;
       }
       else{
-        string request_string(buffer);
+        string request_string(buffer, bytes_received);
         size_t x=request_string.find(" "); // start pos of response
         size_t y=request_string.find(" ",x+1); // end pos of response
         string http_response; // the response i will send
